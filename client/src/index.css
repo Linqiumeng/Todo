@@ -1,0 +1,339 @@
+/* 便签本风格：米白纸、淡蓝横线、顶上一排线圈，勾选时用蓝色圆珠笔打钩。默认米白，可切换暗色 */
+:root {
+  --desk: #ebe5db;
+  --paper: #fbf8f2;
+  --ink: #2b2926;
+  --ink-soft: #5c574f;
+  --muted: #a29b90;
+  --faint: #d3ccc0;
+  --rule: rgba(92, 124, 168, 0.2);
+  --pen: #2c4fa6;
+  --danger: #b5523f;
+  --hover: rgba(44, 79, 166, 0.045);
+  --band: 45%;
+  --shadow: 0 1px 2px rgba(70, 55, 40, 0.06), 0 18px 40px -22px rgba(70, 55, 40, 0.3);
+  /* 桌面：顶上像有一盏灯 */
+  --desk-glow: #f4efe7;
+  /* 便签本各层：灰纸板、纸叠的侧边、最上面一页 */
+  --board: #c4bdb1;
+  --page-edge: #f4f0e8;
+  --page-gap: #d6cfc3;
+  --pad-shadow: 0 1px 1px rgba(60, 45, 30, 0.06), 0 4px 8px rgba(60, 45, 30, 0.06), 0 18px 36px -12px rgba(60, 45, 30, 0.24), 0 40px 70px -30px rgba(60, 45, 30, 0.28);
+  --lighting: linear-gradient(165deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 38%, rgba(0, 0, 0, 0) 70%, rgba(90, 70, 50, 0.045));
+  --lift-shadow: rgba(70, 55, 40, 0.14);
+  --curl-shadow: rgba(60, 45, 30, 0.22);
+  --spiral-shade: rgba(70, 55, 40, 0.16);
+  --perf: rgba(70, 60, 50, 0.13);
+  /* 线圈：圆柱的明暗、绕到纸后面的那段、投在纸上的影子 */
+  --ring-light: #ffffff;
+  --ring-mid: #dcd7cf;
+  --ring-dark: #9c968c;
+  --ring-back: rgba(60, 50, 40, 0.3);
+  --ring-shadow: rgba(50, 40, 30, 0.32);
+  --hole: #8c857a;
+  --hole-rim: rgba(255, 255, 255, 0.85);
+  /* 纸面的细微颗粒 */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .3 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.1'/%3E%3C/svg%3E");
+  --line: 44px;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-serif: 'Instrument Serif', 'Songti SC', Georgia, serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* 分类名等小标签：英文用等宽，中文落到系统字体 */
+  --font-label: 'DM Mono', -apple-system, 'PingFang SC', sans-serif;
+  color-scheme: light;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--desk);
+  -webkit-font-smoothing: antialiased;
+}
+
+:root[data-theme='dark'] {
+  --desk: #141312;
+  --paper: #1f1e1c;
+  --ink: #ece7de;
+  --ink-soft: #bdb6aa;
+  --muted: #7f796f;
+  --faint: #4a4640;
+  --rule: rgba(160, 180, 220, 0.11);
+  --pen: #8eaefc;
+  --danger: #e08a76;
+  --hover: rgba(142, 174, 252, 0.06);
+  --band: 32%;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 22px 44px -22px rgba(0, 0, 0, 0.85);
+  --desk-glow: #1e1d1b;
+  --board: #2d2b28;
+  --page-edge: #282725;
+  --page-gap: #111110;
+  --pad-shadow: 0 2px 4px rgba(0, 0, 0, 0.45), 0 20px 40px -14px rgba(0, 0, 0, 0.75), 0 44px 80px -30px rgba(0, 0, 0, 0.8);
+  --lighting: linear-gradient(165deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 40%, rgba(0, 0, 0, 0) 68%, rgba(0, 0, 0, 0.2));
+  --lift-shadow: rgba(0, 0, 0, 0.5);
+  --curl-shadow: rgba(0, 0, 0, 0.65);
+  --spiral-shade: rgba(0, 0, 0, 0.5);
+  --perf: rgba(255, 255, 255, 0.09);
+  --ring-light: #c2bdb3;
+  --ring-mid: #6e6a63;
+  --ring-dark: #2a2826;
+  --ring-back: rgba(0, 0, 0, 0.5);
+  --ring-shadow: rgba(0, 0, 0, 0.7);
+  --hole: #080807;
+  --hole-rim: rgba(255, 255, 255, 0.07);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; transition: background-color 0.3s;
+  background: radial-gradient(120% 60% at 50% -8%, var(--desk-glow), transparent 70%) no-repeat, var(--desk);
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; }
+h1, h2 { margin: 0; font-weight: 400; font-size: inherit; }
+.error { color: var(--danger); }
+
+.container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+main.container { padding-bottom: 72px; }
+
+/* 顶栏 */
+.topbar { display: flex; align-items: center; gap: 20px; padding-top: 30px; padding-bottom: 24px; }
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; min-width: 0; }
+.brand-mark { font-family: var(--font-serif); font-style: italic; font-size: 2.1rem; line-height: 1; }
+.brand-sub { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.1em; white-space: nowrap; }
+.nav { display: flex; gap: 18px; }
+.nav a { padding: 2px 0; font-size: 0.92rem; color: var(--muted); border-bottom: 1px solid transparent; transition: color 0.2s; }
+.nav a:hover { color: var(--ink); }
+.nav a.active { color: var(--ink); border-bottom-color: currentColor; }
+.icon-btn {
+  width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--faint); background: transparent; color: var(--ink-soft); transition: color 0.2s, border-color 0.2s;
+}
+.icon-btn:hover { color: var(--ink); border-color: var(--muted); }
+.icon-btn svg { width: 16px; height: 16px; }
+
+/* 纸外面的分类筛选 */
+.filters { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+.filter-list { flex: 1; min-width: 0; display: flex; gap: 18px; overflow-x: auto; scrollbar-width: none; padding: 2px 1px 4px; }
+.filter-list::-webkit-scrollbar { display: none; }
+/* 分类多到放不下时，右边渐隐，提示可以横着滑 */
+.filter-list:has(.filter:nth-child(5)) { -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); }
+.filter {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; padding: 3px 0; white-space: nowrap; cursor: pointer;
+  border: none; border-bottom: 1px solid transparent; background: none; color: var(--muted); font-size: 0.9rem; transition: color 0.2s;
+}
+.filter:hover { color: var(--ink); }
+.filter.is-active { color: var(--ink); border-bottom-color: currentColor; }
+.filter-count { font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted); }
+.filter-edit { flex-shrink: 0; padding: 3px 0; border: none; background: none; color: var(--muted); font-size: 0.82rem; cursor: pointer; }
+.filter-edit:hover { color: var(--ink); }
+.dot { width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: var(--c); }
+
+/* 便签本：从下到上依次是灰纸板、纸叠、最上面一页、线圈 */
+.pad { position: relative; isolation: isolate; }
+.pad-board {
+  position: absolute; inset: -3px -2px -12px; z-index: -2; border-radius: 6px;
+  background: var(--grain), var(--board); box-shadow: var(--pad-shadow);
+}
+/* 露在最上面一页下方的纸叠侧边，一条条细线是一张张纸 */
+.pad-pages {
+  position: absolute; left: 1px; right: 1px; top: 6px; bottom: -9px; z-index: -1; border-radius: 0 0 5px 5px;
+  background: linear-gradient(to bottom, transparent 60%, rgba(0, 0, 0, 0.06)), repeating-linear-gradient(to top, var(--page-edge) 0 1.5px, var(--page-gap) 1.5px 2.25px);
+}
+/* 最上面一页的两个下角微微翘起，在下面的纸上投出影子 */
+.pad::before, .pad::after {
+  content: ''; position: absolute; z-index: -1; bottom: 6px; width: 40%; height: 16px; box-shadow: 0 9px 8px var(--curl-shadow);
+}
+.pad::before { left: 14px; transform: rotate(-2.2deg); }
+.pad::after { right: 14px; transform: rotate(2.2deg); }
+
+.sheet {
+  position: relative; padding: 46px 28px 30px; border-radius: 3px 3px 5px 5px;
+  background: var(--grain), var(--lighting), var(--paper); transition: background-color 0.3s;
+  /* 顶部被线圈压出的一点阴影 + 和下面纸叠之间的一线影子 */
+  box-shadow: inset 0 18px 14px -18px var(--spiral-shade), 0 1px 2px var(--lift-shadow);
+}
+/* 线圈下方的撕线 */
+.sheet::before { content: ''; position: absolute; left: 0; right: 0; top: 32px; border-top: 1px dashed var(--perf); }
+
+.spiral { position: absolute; top: -18px; left: 26px; right: 26px; z-index: 1; display: flex; justify-content: space-between; pointer-events: none; }
+.coil { position: relative; width: 14px; height: 40px; }
+/* 纸上打的孔，下沿有一点高光，看起来是凹下去的 */
+.hole {
+  position: absolute; left: 1px; top: 26px; width: 12px; height: 10px; border-radius: 50%;
+  background: var(--hole); box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.45), 0 1px 0 var(--hole-rim);
+}
+/* 线圈：横向是圆柱的明暗；顶端绕到纸后面，暗一些；下端钻进孔里 */
+.ring {
+  position: absolute; left: 2px; top: 0; width: 10px; height: 32px; border-radius: 6px 6px 5px 5px;
+  background:
+    linear-gradient(to bottom, var(--ring-back), transparent 10px),
+    linear-gradient(to top, rgba(0, 0, 0, 0.35), transparent 6px),
+    linear-gradient(90deg, var(--ring-dark), var(--ring-mid) 22%, var(--ring-light) 40%, var(--ring-mid) 64%, var(--ring-dark));
+  filter: drop-shadow(1.5px 2.5px 1.5px var(--ring-shadow));
+}
+
+/* 横线画在每行偏下的位置，字看起来是写在线上的 */
+.sheet-body {
+  /* 最后总留两行空白横线，像一页还没写满的纸 */
+  min-height: calc(var(--line) * 11); padding-bottom: calc(var(--line) * 2); line-height: var(--line);
+  background: linear-gradient(to bottom, transparent calc(var(--line) - 1px), var(--rule) calc(var(--line) - 1px)) 0 -6px / 100% var(--line);
+}
+.sheet-note { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.sheet-note .link-btn { margin-left: 12px; }
+
+.date-line { display: flex; align-items: baseline; gap: 10px; height: var(--line); white-space: nowrap; }
+.date-num { font-family: var(--font-mono); font-size: 0.95rem; letter-spacing: 0.02em; }
+.date-day { font-family: var(--font-serif); font-style: italic; font-size: 1.4rem; }
+.date-rel { font-size: 0.75rem; color: var(--muted); }
+.date-meta { margin-left: auto; font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; }
+.sheet-title { font-family: var(--font-serif); font-size: 1.45rem; }
+
+/* 分类标题：像用荧光笔在底下划了一道 */
+.group-title {
+  height: var(--line); font-family: var(--font-label); font-size: 0.8rem; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft);
+}
+.marker {
+  --c: var(--faint); padding: 0 5px; margin-left: -5px;
+  background: linear-gradient(transparent 40%, color-mix(in srgb, var(--c) var(--band), transparent) 40%, color-mix(in srgb, var(--c) var(--band), transparent) 82%, transparent 82%);
+}
+
+/* 待办 */
+.todo-list { list-style: none; margin: 0; padding: 0; }
+.todo { position: relative; display: flex; align-items: flex-start; border-radius: 4px; transition: background-color 0.2s; }
+.todo:hover { background: var(--hover); }
+.todo:has(.todo-check:focus-visible) { outline: 1.5px solid var(--pen); outline-offset: -1px; }
+.todo-main { flex: 1; min-width: 0; display: flex; align-items: flex-start; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.todo-check { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.bullet { flex-shrink: 0; width: 26px; font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); user-select: none; }
+.todo-text { min-width: 0; overflow-wrap: anywhere; }
+.ink { position: relative; display: inline-block; max-width: 100%; transition: color 0.4s; }
+.is-done .ink { color: var(--muted); }
+.tick {
+  position: absolute; left: -10px; top: 50%; width: clamp(64px, calc(100% + 24px), 260px); height: 30px; margin-top: -17px;
+  overflow: visible; pointer-events: none;
+}
+.tick path {
+  fill: none; stroke: var(--pen); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0;
+  /* 圆头线帽在长度为 0 时也会留一个点，没勾的时候等擦掉的动画结束再整个隐藏 */
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.65, 0, 0.35, 1), opacity 0s 0.5s;
+}
+.is-done .tick path { stroke-dashoffset: 0; opacity: 1; transition-delay: 0s; }
+.todo-delete {
+  flex-shrink: 0; width: 32px; height: var(--line); padding: 0; border: none; background: none; cursor: pointer;
+  color: var(--faint); font-size: 1.1rem; transition: color 0.2s, opacity 0.2s;
+}
+.todo-delete:hover { color: var(--danger); }
+/* 有鼠标的设备上，删除按钮悬停时才出现 */
+@media (hover: hover) {
+  .todo-delete { opacity: 0; }
+  .todo:hover .todo-delete, .todo-delete:focus-visible { opacity: 1; }
+}
+
+/* 纸上的「下一行」 */
+.add-line { display: flex; align-items: center; height: var(--line); }
+.add-input { flex: 1; min-width: 0; height: var(--line); padding: 0; border: none; outline: none; background: transparent; color: var(--ink); font: inherit; }
+.add-input::placeholder { color: var(--muted); opacity: 0.7; }
+.add-submit { flex-shrink: 0; padding: 0 12px; border: none; background: none; color: var(--pen); font-size: 0.85rem; cursor: pointer; }
+.add-cat { position: relative; flex-shrink: 0; display: flex; align-items: center; }
+.add-cat::after { content: '▾'; position: absolute; right: 1px; font-size: 0.7rem; color: var(--muted); pointer-events: none; }
+.add-cat select {
+  appearance: none; -webkit-appearance: none; max-width: 8.5em; padding: 2px 14px 2px 4px; border: none; border-radius: 4px; cursor: pointer;
+  background: transparent; color: var(--muted); font-family: var(--font-label); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.add-cat select:focus-visible { outline: 1.5px solid var(--pen); }
+
+/* 完成记录 */
+.day-group { margin-top: var(--line); }
+.history-item { display: flex; align-items: flex-start; gap: 12px; border-radius: 4px; transition: background-color 0.2s; }
+.history-item:hover { background: var(--hover); }
+.history-time { flex-shrink: 0; width: 40px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); }
+.history-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.history-cat {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; height: var(--line);
+  font-family: var(--font-label); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+.history-actions { flex-shrink: 0; display: flex; transition: opacity 0.2s; }
+.history-actions .link-btn { width: 26px; height: var(--line); font-size: 1rem; }
+@media (hover: hover) {
+  .history-actions { opacity: 0; }
+  .history-item:hover .history-actions, .history-actions:focus-within { opacity: 1; }
+}
+.sheet-more { display: block; height: var(--line); margin-top: var(--line); padding: 0; border: none; background: none; color: var(--pen); font-size: 0.85rem; cursor: pointer; }
+
+/* 按钮 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; padding: 8px 20px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--ink); background: transparent; color: var(--ink); font-size: 0.88rem; line-height: 1.4; transition: opacity 0.2s;
+}
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn:disabled { opacity: 0.3; cursor: default; }
+.link-btn { padding: 0; border: none; background: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; }
+.link-btn:hover { color: var(--ink); }
+.link-btn.danger:hover { color: var(--danger); }
+
+/* 编辑分类：从底部升起的一张纸 */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(30, 26, 22, 0.3); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+}
+.modal {
+  position: relative; width: min(520px, 100%); max-height: 88vh; overflow-y: auto; padding: 26px 26px 34px;
+  border-radius: 14px 14px 0 0; background: var(--grain), var(--lighting), var(--paper); box-shadow: var(--shadow); animation: sheet-up 0.28s ease-out;
+}
+@keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } }
+.modal h2 { font-family: var(--font-serif); font-size: 1.7rem; line-height: 1.2; }
+.modal .hint { margin: 6px 0 20px; font-size: 0.8rem; color: var(--muted); }
+.modal-close {
+  position: absolute; top: 18px; right: 18px; width: 32px; height: 32px; padding: 0; border: none; background: none; cursor: pointer;
+  color: var(--muted); font-size: 1.4rem; line-height: 1;
+}
+.modal-close:hover { color: var(--ink); }
+.cat-list { list-style: none; margin: 0 0 24px; padding: 0; border-top: 1px solid var(--rule); }
+.cat-row { display: flex; align-items: center; gap: 14px; height: 50px; border-bottom: 1px solid var(--rule); }
+.cat-row input, .cat-new-row input {
+  flex: 1; min-width: 0; padding: 6px 0; border: none; outline: none; background: transparent; color: var(--ink); font: inherit;
+}
+.cat-row input:focus { color: var(--pen); }
+.swatch { width: 16px; height: 16px; flex-shrink: 0; padding: 0; border: none; border-radius: 50%; background: var(--c); cursor: pointer; }
+.swatch.is-on { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--c); }
+.swatches { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; padding-left: 2px; }
+.cat-new-row { display: flex; align-items: center; gap: 12px; padding-bottom: 4px; border-bottom: 1px solid var(--muted); }
+.cat-new-row input::placeholder { color: var(--muted); opacity: 0.7; }
+.cat-new-row .btn { padding: 6px 16px; }
+
+/* 口令页 */
+.gate { position: relative; min-height: 100vh; display: grid; place-items: center; padding: 60px 20px; }
+.gate > .icon-btn { position: absolute; top: 24px; right: 20px; }
+.gate .pad { width: min(380px, 100%); }
+.gate .sheet-body { min-height: 0; padding-bottom: 0; }
+.gate-form { display: flex; flex-direction: column; }
+/* 占两行，字写在第二条横线上 */
+.gate-title {
+  height: calc(var(--line) * 2); padding-top: var(--line); line-height: var(--line);
+  font-family: var(--font-serif); font-style: italic; font-size: 3.2rem;
+}
+.gate-hint { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.line-input { height: var(--line); padding: 0; border: none; outline: none; background: transparent; color: var(--ink); font: inherit; letter-spacing: 0.15em; }
+.line-input::placeholder { letter-spacing: normal; color: var(--muted); opacity: 0.7; }
+.gate-error { height: var(--line); margin: 0; font-size: 0.85rem; }
+/* 按钮底边正好压在横线上（横线在每行底部往上 6px） */
+.gate-actions { display: flex; align-items: flex-end; height: var(--line); padding-bottom: 7px; }
+.gate-actions .btn { width: 100%; }
+
+/* 底部提示 */
+.toast-region { position: fixed; left: 0; right: 0; bottom: 26px; z-index: 60; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; }
+.toast { padding: 8px 18px; border-radius: 999px; background: var(--ink); color: var(--paper); font-size: 0.85rem; box-shadow: var(--shadow); animation: toast-in 0.2s ease-out; }
+@keyframes toast-in { from { transform: translateY(8px); opacity: 0; } }
+
+@media (max-width: 640px) {
+  .container { padding: 0 14px; }
+  .topbar { gap: 16px; padding-top: 22px; padding-bottom: 18px; }
+  .brand-mark { font-size: 1.8rem; }
+  .filters { margin-bottom: 24px; }
+  .sheet { padding: 46px 16px 24px; }
+  .spiral { left: 16px; right: 16px; }
+  .coil:nth-child(n + 8) { display: none; }
+  .bullet { width: 22px; }
+  .history-item { gap: 10px; }
+  .modal { padding: 22px 18px 30px; }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "todo-site",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "node --watch --env-file-if-exists=.env server/dev.js",
+    "dev:web": "npm run dev -w client",
+    "build": "npm run build -w client"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^8.9.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "mongodb-memory-server": "^10.1.0"
+  },
+  "config": {
+    "mongodbMemoryServer": {
+      "disablePostinstall": "1"
+    }
+  }
+}
