@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import AddTodo from '../components/AddTodo.jsx';
 import CategoryManager from '../components/CategoryManager.jsx';
 import CategoryTabs, { ALL, NONE, buildTabs } from '../components/CategoryTabs.jsx';
@@ -9,9 +9,15 @@ import { useCategories } from '../lib/CategoriesContext.jsx';
 import { startOfToday } from '../lib/dates.js';
 import { load, save } from '../lib/storage.js';
 import { toast, toastError } from '../lib/toast.js';
+import useFlip from '../lib/useFlip.js';
 
 // 记住上次停在哪个分类
 const TAB_KEY = 'todo-tab';
+
+// 打钩后先在原位把钩画完（动画 0.5s），再滑到下面去
+const SETTLE_MS = 650;
+
+const time = (value) => new Date(value).getTime();
 
 export default function Today() {
   const { categories, categoryOf } = useCategories();
@@ -23,6 +29,16 @@ export default function Today() {
     return saved && saved !== ALL && saved !== NONE ? saved : '';
   });
   const [managing, setManaging] = useState(false);
+  // 刚勾选/取消的条目暂时按原来的状态排序：id → 排序时当作的 done
+  const [held, setHeld] = useState({});
+  const timers = useRef({});
+  const listRef = useRef(null);
+  const primeFlip = useFlip(listRef);
+
+  useEffect(() => {
+    const pending = timers.current;
+    return () => Object.values(pending).forEach(clearTimeout);
+  }, []);
 
   // 未完成的 + 今天完成的；昨天及以前完成的只在「记录」页出现
   const reload = useCallback(
@@ -58,10 +74,18 @@ export default function Today() {
   const activeTab = tabs.some((t) => t.id === tab) ? tab : ALL;
   const newTodoCategory = categories.some((c) => c._id === addCategory) ? addCategory : '';
 
-  // 像在本子上写一样：按分类分段，段内按添加顺序从上往下排，勾掉的留在原位
+  // 按分类分段；段内没做完的在上面（按添加顺序），勾掉的沉到下面（按完成顺序）
+  const sortDone = (t) => held[t._id] ?? t.done;
   const visible = list
     .filter((t) => activeTab === ALL || tabOf(t) === activeTab)
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    .sort((a, b) => {
+      const da = sortDone(a);
+      const db = sortDone(b);
+      if (da !== db) return da ? 1 : -1;
+      return da && a.completedAt && b.completedAt
+        ? time(a.completedAt) - time(b.completedAt)
+        : time(a.createdAt) - time(b.createdAt);
+    });
   const showHeadings = categories.length > 0;
   const groups = (activeTab === ALL ? [...categories.map((c) => c._id), NONE] : [activeTab])
     .map((id) => ({
@@ -96,9 +120,22 @@ export default function Today() {
     }
   };
 
+  // 勾选后先停在原位，等钩画完再滑到该去的位置。连点两下的话按最早的状态算，最后不动
+  const hold = (todo) => {
+    const id = todo._id;
+    clearTimeout(timers.current[id]);
+    setHeld((h) => ({ ...h, [id]: h[id] ?? todo.done }));
+    timers.current[id] = setTimeout(() => {
+      delete timers.current[id];
+      primeFlip();
+      setHeld(({ [id]: _, ...rest }) => rest);
+    }, SETTLE_MS);
+  };
+
   // 先在界面上打钩，请求失败再改回来
   const toggle = async (todo) => {
     const done = !todo.done;
+    hold(todo);
     replace(todo._id, { ...todo, done, completedAt: done ? new Date().toISOString() : null });
     try {
       replace(todo._id, await api.updateTodo(todo._id, { done }));
@@ -158,28 +195,30 @@ export default function Today() {
         ) : (
           <>
             {groups.length === 0 && <p className="sheet-note">{emptyText}</p>}
-            {groups.map((g) => (
-              <div key={g.id} className="group">
-                {showHeadings && (
-                  <h2 className="group-title">
-                    <span className="marker" style={g.color ? { '--c': g.color } : undefined}>{g.name}</span>
-                  </h2>
-                )}
-                <ul className="todo-list">
-                  {g.items.map((todo) => (
-                    <TodoItem
-                      key={todo._id}
-                      todo={todo}
-                      bullet={showHeadings ? '↳' : '·'}
-                      categories={categories}
-                      onToggle={toggle}
-                      onDelete={remove}
-                      onSave={edit}
-                    />
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <div ref={listRef}>
+              {groups.map((g) => (
+                <div key={g.id} className="group">
+                  {showHeadings && (
+                    <h2 className="group-title">
+                      <span className="marker" style={g.color ? { '--c': g.color } : undefined}>{g.name}</span>
+                    </h2>
+                  )}
+                  <ul className="todo-list">
+                    {g.items.map((todo) => (
+                      <TodoItem
+                        key={todo._id}
+                        todo={todo}
+                        bullet={showHeadings ? '↳' : '·'}
+                        categories={categories}
+                        onToggle={toggle}
+                        onDelete={remove}
+                        onSave={edit}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
             <AddTodo
               categories={categories}
               category={newTodoCategory}

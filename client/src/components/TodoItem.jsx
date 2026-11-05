@@ -46,7 +46,7 @@ function TodoEditor({ todo, bullet, categories, onSave, onClose }) {
   };
 
   return (
-    <li className="todo is-editing">
+    <li className="todo is-editing" data-flip={todo._id}>
       <form
         className="todo-edit"
         onSubmit={(e) => {
@@ -105,7 +105,7 @@ export default function TodoItem({ todo, bullet, categories, onToggle, onDelete,
   }
 
   return (
-    <li className={`todo ${todo.done ? 'is-done' : ''}`}>
+    <li className={`todo ${todo.done ? 'is-done' : ''}`} data-flip={todo._id}>
       <label className="todo-main">
         <input type="checkbox" className="todo-check" checked={todo.done} onChange={() => onToggle(todo)} />
         <span className="bullet" aria-hidden="true">{bullet}</span>
