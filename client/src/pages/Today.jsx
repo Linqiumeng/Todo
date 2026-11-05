@@ -108,6 +108,21 @@ export default function Today() {
     }
   };
 
+  // 改标题或换分类：同样先改界面，失败再改回来
+  const edit = async (todo, changes) => {
+    const next = { ...todo, ...changes };
+    replace(todo._id, next);
+    try {
+      replace(todo._id, await api.updateTodo(todo._id, changes));
+      if ('category' in changes && activeTab !== ALL && (changes.category ?? NONE) !== activeTab) {
+        toast(`已移到「${categoryOf(next)?.name ?? '未分类'}」`);
+      }
+    } catch (err) {
+      replace(todo._id, todo);
+      toastError(err);
+    }
+  };
+
   const remove = async (todo) => {
     if (!window.confirm(`删除「${todo.title}」？`)) return;
     setTodos((ts) => ts.filter((t) => t._id !== todo._id));
@@ -156,8 +171,10 @@ export default function Today() {
                       key={todo._id}
                       todo={todo}
                       bullet={showHeadings ? '↳' : '·'}
+                      categories={categories}
                       onToggle={toggle}
                       onDelete={remove}
+                      onSave={edit}
                     />
                   ))}
                 </ul>

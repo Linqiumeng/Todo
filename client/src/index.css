@@ -218,16 +218,22 @@ main.container { padding-bottom: 72px; }
   transition: stroke-dashoffset 0.5s cubic-bezier(0.65, 0, 0.35, 1), opacity 0s 0.5s;
 }
 .is-done .tick path { stroke-dashoffset: 0; opacity: 1; transition-delay: 0s; }
-.todo-delete {
-  flex-shrink: 0; width: 32px; height: var(--line); padding: 0; border: none; background: none; cursor: pointer;
-  color: var(--faint); font-size: 1.1rem; transition: color 0.2s, opacity 0.2s;
+.todo-actions { flex-shrink: 0; display: flex; transition: opacity 0.2s; }
+.todo-btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 28px; height: var(--line); padding: 0;
+  border: none; background: none; cursor: pointer; color: var(--faint); font-size: 1.1rem; transition: color 0.2s;
 }
-.todo-delete:hover { color: var(--danger); }
-/* 有鼠标的设备上，删除按钮悬停时才出现 */
+.todo-btn:hover { color: var(--ink); }
+.todo-btn.danger:hover { color: var(--danger); }
+/* 有鼠标的设备上，修改和删除悬停时才出现 */
 @media (hover: hover) {
-  .todo-delete { opacity: 0; }
-  .todo:hover .todo-delete, .todo-delete:focus-visible { opacity: 1; }
+  .todo-actions { opacity: 0; }
+  .todo:hover .todo-actions, .todo-actions:focus-within { opacity: 1; }
 }
+/* 正在改写的那一行：浅浅的底色，光标用笔的蓝色 */
+.todo.is-editing { background: var(--hover); }
+.todo-edit { flex: 1; min-width: 0; display: flex; align-items: center; height: var(--line); }
+.todo-edit .add-input { caret-color: var(--pen); }
 
 /* 纸上的「下一行」 */
 .add-line { display: flex; align-items: center; height: var(--line); }
