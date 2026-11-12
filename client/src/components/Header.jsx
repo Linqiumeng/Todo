@@ -11,6 +11,7 @@ export default function Header() {
       </Link>
       <nav className="nav">
         <NavLink to="/" end>待办</NavLink>
+        <NavLink to="/schedule" className="only-narrow">时间</NavLink>
         <NavLink to="/history">记录</NavLink>
       </nav>
       <ThemeToggle />

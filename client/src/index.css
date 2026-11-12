@@ -35,6 +35,10 @@
   /* 纸面的细微颗粒 */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .3 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.1'/%3E%3C/svg%3E");
   --line: 44px;
+  /* 时间表：色块的浓度、长纸条的影子、纸胶带 */
+  --block: 30%;
+  --strip-shadow: 0 1px 2px rgba(60, 45, 30, 0.08), 0 3px 6px rgba(60, 45, 30, 0.05), 0 16px 34px -16px rgba(60, 45, 30, 0.3);
+  --tape: rgba(214, 199, 170, 0.62);
   --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   --font-serif: 'Instrument Serif', 'Songti SC', Georgia, serif;
   --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -77,6 +81,9 @@
   --ring-shadow: rgba(0, 0, 0, 0.7);
   --hole: #080807;
   --hole-rim: rgba(255, 255, 255, 0.07);
+  --block: 26%;
+  --strip-shadow: 0 2px 4px rgba(0, 0, 0, 0.45), 0 18px 36px -16px rgba(0, 0, 0, 0.8);
+  --tape: rgba(120, 108, 88, 0.5);
   color-scheme: dark;
 }
 
@@ -234,6 +241,24 @@ main.container { padding-bottom: 72px; }
 .todo.is-editing { background: var(--hover); }
 .todo-edit { flex: 1; min-width: 0; display: flex; align-items: center; height: var(--line); }
 .todo-edit .add-input { caret-color: var(--pen); }
+.edit-controls { display: contents; }
+.todo-edit .add-cat + .add-cat { margin-left: 4px; }
+.add-cat.is-time select { color: var(--pen); }
+
+/* 清单右边：排了时间的写开始时间；过了时间还没做完的变红 */
+.todo-side { flex-shrink: 0; position: relative; display: flex; align-items: flex-start; }
+.todo-time {
+  height: var(--line); padding-left: 10px; white-space: nowrap; font-family: var(--font-mono); font-size: 0.72rem;
+  letter-spacing: 0.02em; color: var(--muted); transition: opacity 0.2s;
+}
+.todo-time.is-late { color: var(--danger); }
+.is-done .todo-time { opacity: 0.55; }
+/* 有鼠标时，时间和修改/删除叠在同一个位置，悬停时换成按钮 */
+@media (hover: hover) {
+  .todo-side { min-width: 56px; justify-content: flex-end; }
+  .todo-side .todo-actions { position: absolute; top: 0; right: 0; }
+  .todo:hover .todo-time, .todo-side:focus-within .todo-time { opacity: 0; }
+}
 
 /* 纸上的「下一行」 */
 .add-line { display: flex; align-items: center; height: var(--line); }
@@ -326,6 +351,87 @@ main.container { padding-bottom: 72px; }
 .gate-actions { display: flex; align-items: flex-end; height: var(--line); padding-bottom: 7px; }
 .gate-actions .btn { width: 100%; }
 
+/* ---------- 版面：宽屏时左边便签本，右边竖着一条时间表 ---------- */
+.nav .only-narrow { display: none; }
+@media (min-width: 1000px) {
+  .page { display: grid; grid-template-columns: 600px 300px; gap: 56px; justify-content: center; align-items: start; }
+  .page .container { max-width: none; }
+  /* 从顶栏的高度一直到屏幕底部，页面往下滚时不动 */
+  .strip-col { position: sticky; top: 30px; height: calc(100vh - 60px); margin-top: 30px; }
+}
+@media (max-width: 999px) {
+  .nav .only-narrow { display: inline; }
+  .strip-col { display: none; }
+  .page.is-time .strip-col {
+    display: block; max-width: 600px; height: calc(100vh - 130px); height: calc(100dvh - 130px); min-height: 440px;
+    margin: 14px auto 30px; padding: 0 20px;
+  }
+  .page.is-time .main-col main { display: none; }
+}
+
+/* 长纸条，顶上用一小段纸胶带贴在桌上 */
+.strip {
+  position: relative; display: flex; flex-direction: column; height: 100%; padding: 30px 20px 14px; border-radius: 3px;
+  background: var(--grain), var(--lighting), var(--paper); box-shadow: var(--strip-shadow); transition: background-color 0.3s;
+}
+.tape {
+  position: absolute; top: -13px; left: 50%; width: 92px; height: 26px; transform: translateX(-50%) rotate(-2.5deg);
+  background: linear-gradient(rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 60%), var(--tape);
+  /* 两头撕开的锯齿边 */
+  clip-path: polygon(3% 0, 97% 0, 100% 14%, 97% 30%, 100% 46%, 97% 62%, 100% 78%, 97% 100%, 3% 100%, 0 84%, 3% 68%, 0 52%, 3% 36%, 0 20%);
+}
+.rules { background: linear-gradient(to bottom, transparent calc(var(--line) - 1px), var(--rule) calc(var(--line) - 1px)) 0 -6px / 100% var(--line); }
+.strip-head { flex-shrink: 0; line-height: var(--line); }
+.day-nav { display: flex; align-items: center; gap: 2px; height: var(--line); font-size: 0.85rem; white-space: nowrap; }
+.day-nav button { padding: 0; border: none; background: none; cursor: pointer; line-height: 1; }
+.day-step { width: 24px; height: 24px; color: var(--muted); font-size: 1rem; }
+.day-step:hover, .to-now:hover { color: var(--ink); }
+.day-label { padding: 0 2px; font-size: 0.85rem; }
+.day-sub { margin-left: 6px; font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); }
+.day-nav .to-now { margin-left: auto; color: var(--muted); font-size: 0.78rem; }
+
+.tl-scroll {
+  position: relative; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain;
+  -webkit-mask-image: linear-gradient(transparent, #000 16px, #000 calc(100% - 16px), transparent);
+  mask-image: linear-gradient(transparent, #000 16px, #000 calc(100% - 16px), transparent);
+}
+.tl-scroll::-webkit-scrollbar { display: none; }
+.tl-grid { position: relative; height: calc(var(--line) * 35); }
+/* 整点写在线上 */
+.tl-hour {
+  position: absolute; left: 0; width: 32px; margin-top: -15px; line-height: 14px;
+  font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted);
+}
+.tl-lane { position: absolute; top: 0; bottom: 0; left: 38px; right: 0; border-left: 1px solid var(--rule); }
+
+/* 色块：像用分类颜色的荧光笔涂了一段，横线透出来；点一下打钩 */
+.tl-block {
+  position: absolute; z-index: 1; display: block; overflow: hidden; padding: 6px 7px 0 10px; border: none; border-radius: 3px;
+  text-align: left; color: var(--ink); font: inherit; line-height: var(--line); cursor: pointer;
+  background: color-mix(in srgb, var(--c) var(--block), transparent); box-shadow: inset 2.5px 0 0 var(--c); transition: background-color 0.2s;
+}
+.tl-block:hover { background: color-mix(in srgb, var(--c) calc(var(--block) + 10%), transparent); }
+.tl-block:focus-visible { outline: 1.5px solid var(--pen); outline-offset: 1px; }
+.tl-title { display: block; white-space: nowrap; font-size: 0.84rem; }
+.tl-title .ink { overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
+.tl-block.is-done .tl-title .ink { overflow: visible; }
+.tl-range { display: block; font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.02em; color: var(--ink-soft); }
+.tl-block.is-done { background: color-mix(in srgb, var(--c) 12%, transparent); box-shadow: inset 2.5px 0 0 color-mix(in srgb, var(--c) 50%, transparent); }
+/* 15 分钟的只有半行高 */
+.tl-block.is-short { padding-top: 0; line-height: 21px; }
+.tl-block.is-short .tl-title { font-size: 0.72rem; }
+/* 正在编辑的那条：虚线框预览会放在哪 */
+.tl-block.is-ghost { background: transparent; box-shadow: none; cursor: default; outline: 1.5px dashed var(--c); outline-offset: -1.5px; }
+.tl-block.is-ghost .tl-title { color: var(--ink-soft); }
+
+/* 现在：压在色块下面，不挡字 */
+.tl-now { position: absolute; left: 38px; right: 0; z-index: 0; border-top: 1.5px solid var(--pen); pointer-events: none; }
+.tl-now::before { content: ''; position: absolute; left: -4px; top: -4.75px; width: 8px; height: 8px; border-radius: 50%; background: var(--pen); }
+.tl-now-label {
+  position: absolute; left: 0; z-index: 2; width: 34px; margin-top: -8px; line-height: 16px;
+  background: var(--paper); font-family: var(--font-mono); font-size: 0.64rem; color: var(--pen); pointer-events: none;
+}
+
 /* 底部提示 */
 .toast-region { position: fixed; left: 0; right: 0; bottom: 26px; z-index: 60; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; }
 .toast { padding: 8px 18px; border-radius: 999px; background: var(--ink); color: var(--paper); font-size: 0.85rem; box-shadow: var(--shadow); animation: toast-in 0.2s ease-out; }
@@ -342,4 +448,9 @@ main.container { padding-bottom: 72px; }
   .bullet { width: 22px; }
   .history-item { gap: 10px; }
   .modal { padding: 22px 18px 30px; }
+  .page.is-time .strip-col { padding: 0 14px; }
+  /* 编辑行放不下：第二行放分类、时间和保存 */
+  .todo.is-editing .todo-edit { flex-wrap: wrap; height: auto; }
+  .todo.is-editing .add-input { flex: 1 1 calc(100% - 22px); }
+  .edit-controls { display: flex; align-items: center; justify-content: flex-end; width: 100%; height: var(--line); }
 }

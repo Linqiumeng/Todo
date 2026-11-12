@@ -1,68 +1,39 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AddTodo from '../components/AddTodo.jsx';
 import CategoryManager from '../components/CategoryManager.jsx';
 import CategoryTabs, { ALL, NONE, buildTabs } from '../components/CategoryTabs.jsx';
 import Sheet, { DateLine } from '../components/Sheet.jsx';
 import TodoItem from '../components/TodoItem.jsx';
-import { api } from '../lib/api.js';
 import { useCategories } from '../lib/CategoriesContext.jsx';
-import { startOfToday } from '../lib/dates.js';
 import { load, save } from '../lib/storage.js';
-import { toast, toastError } from '../lib/toast.js';
+import { useTodos } from '../lib/TodosContext.jsx';
+import { toast } from '../lib/toast.js';
 import useFlip from '../lib/useFlip.js';
 
 // 记住上次停在哪个分类
 const TAB_KEY = 'todo-tab';
 
-// 打钩后先在原位把钩画完（动画 0.5s），再滑到下面去
-const SETTLE_MS = 650;
-
 const time = (value) => new Date(value).getTime();
 
 export default function Today() {
   const { categories, categoryOf } = useCategories();
-  const [todos, setTodos] = useState(null);
-  const [error, setError] = useState('');
+  const { todos, error, reload, add, toggle, edit, remove, held, beforeReorder, viewDay, setDraft, now } = useTodos();
   const [tab, setTab] = useState(() => load(TAB_KEY) ?? ALL);
   const [addCategory, setAddCategory] = useState(() => {
     const saved = load(TAB_KEY);
     return saved && saved !== ALL && saved !== NONE ? saved : '';
   });
   const [managing, setManaging] = useState(false);
-  // 刚勾选/取消的条目暂时按原来的状态排序：id → 排序时当作的 done
-  const [held, setHeld] = useState({});
-  const timers = useRef({});
   const listRef = useRef(null);
   const primeFlip = useFlip(listRef);
 
+  // 打钩后的条目滑下去之前，先让清单记下现在的位置
   useEffect(() => {
-    const pending = timers.current;
-    return () => Object.values(pending).forEach(clearTimeout);
-  }, []);
-
-  // 未完成的 + 今天完成的；昨天及以前完成的只在「记录」页出现
-  const reload = useCallback(
-    () =>
-      api
-        .listTodos(startOfToday())
-        .then((list) => {
-          setTodos(list);
-          setError('');
-        })
-        .catch((err) => setError(err.status === 401 ? '' : err.message)),
-    [],
-  );
-
-  useEffect(() => {
-    reload();
-  }, [reload]);
-
-  // 切回这个页面时重新拉取：过了零点，昨天完成的会自动消失；在别的设备上的改动也会同步过来
-  useEffect(() => {
-    const onVisible = () => document.visibilityState === 'visible' && reload();
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [reload]);
+    beforeReorder.current = primeFlip;
+    return () => {
+      beforeReorder.current = null;
+    };
+  }, [beforeReorder, primeFlip]);
 
   const list = todos ?? [];
   const tabOf = (todo) => categoryOf(todo)?._id ?? NONE;
@@ -103,71 +74,18 @@ export default function Today() {
     if (id !== ALL) setAddCategory(id === NONE ? '' : id);
   };
 
-  const replace = (id, next) => setTodos((ts) => ts.map((t) => (t._id === id ? next : t)));
-
-  const add = async (title) => {
-    try {
-      const todo = await api.createTodo({ title, category: newTodoCategory || null });
-      setTodos((ts) => [...(ts ?? []), todo]);
-      const target = todo.category ?? NONE;
-      if (activeTab !== ALL && target !== activeTab) {
-        toast(`已加到「${categoryOf(todo)?.name ?? '未分类'}」`);
-      }
-      return true;
-    } catch (err) {
-      toastError(err);
-      return false;
+  const addTodo = async (title) => {
+    const todo = await add({ title, category: newTodoCategory || null });
+    if (todo && activeTab !== ALL && (todo.category ?? NONE) !== activeTab) {
+      toast(`已加到「${categoryOf(todo)?.name ?? '未分类'}」`);
     }
+    return Boolean(todo);
   };
 
-  // 勾选后先停在原位，等钩画完再滑到该去的位置。连点两下的话按最早的状态算，最后不动
-  const hold = (todo) => {
-    const id = todo._id;
-    clearTimeout(timers.current[id]);
-    setHeld((h) => ({ ...h, [id]: h[id] ?? todo.done }));
-    timers.current[id] = setTimeout(() => {
-      delete timers.current[id];
-      primeFlip();
-      setHeld(({ [id]: _, ...rest }) => rest);
-    }, SETTLE_MS);
-  };
-
-  // 先在界面上打钩，请求失败再改回来
-  const toggle = async (todo) => {
-    const done = !todo.done;
-    hold(todo);
-    replace(todo._id, { ...todo, done, completedAt: done ? new Date().toISOString() : null });
-    try {
-      replace(todo._id, await api.updateTodo(todo._id, { done }));
-    } catch (err) {
-      replace(todo._id, todo);
-      toastError(err);
-    }
-  };
-
-  // 改标题或换分类：同样先改界面，失败再改回来
-  const edit = async (todo, changes) => {
-    const next = { ...todo, ...changes };
-    replace(todo._id, next);
-    try {
-      replace(todo._id, await api.updateTodo(todo._id, changes));
-      if ('category' in changes && activeTab !== ALL && (changes.category ?? NONE) !== activeTab) {
-        toast(`已移到「${categoryOf(next)?.name ?? '未分类'}」`);
-      }
-    } catch (err) {
-      replace(todo._id, todo);
-      toastError(err);
-    }
-  };
-
-  const remove = async (todo) => {
-    if (!window.confirm(`删除「${todo.title}」？`)) return;
-    setTodos((ts) => ts.filter((t) => t._id !== todo._id));
-    try {
-      await api.deleteTodo(todo._id);
-    } catch (err) {
-      toastError(err);
-      reload();
+  const saveTodo = async (todo, changes) => {
+    const ok = await edit(todo, changes);
+    if (ok && 'category' in changes && activeTab !== ALL && (changes.category ?? NONE) !== activeTab) {
+      toast(`已移到「${categoryOf({ ...todo, ...changes })?.name ?? '未分类'}」`);
     }
   };
 
@@ -210,9 +128,12 @@ export default function Today() {
                         todo={todo}
                         bullet={showHeadings ? '↳' : '·'}
                         categories={categories}
+                        now={now}
+                        viewDay={viewDay}
                         onToggle={toggle}
                         onDelete={remove}
-                        onSave={edit}
+                        onSave={saveTodo}
+                        onDraft={setDraft}
                       />
                     ))}
                   </ul>
@@ -223,7 +144,7 @@ export default function Today() {
               categories={categories}
               category={newTodoCategory}
               onCategoryChange={setAddCategory}
-              onAdd={add}
+              onAdd={addTodo}
             />
           </>
         )}

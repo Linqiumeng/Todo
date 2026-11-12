@@ -2,9 +2,42 @@
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export function startOfToday() {
-  const d = new Date();
+  return startOfDay(new Date());
+}
+
+export function startOfDay(value) {
+  const d = new Date(value);
   d.setHours(0, 0, 0, 0);
   return d;
+}
+
+export function addDays(value, days) {
+  const d = new Date(value);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+export const sameDay = (a, b) => dayKey(a) === dayKey(b);
+
+// 一天里的第几分钟，和反过来：某天的第 m 分钟
+export function minutesOf(value) {
+  const d = new Date(value);
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+export function atMinutes(day, minutes) {
+  const d = startOfDay(day);
+  d.setMinutes(minutes);
+  return d;
+}
+
+// 600 → 10:00
+export const hm = (minutes) => `${Math.floor(minutes / 60)}:${pad(minutes % 60)}`;
+
+// 11.14
+export function shortDate(value) {
+  const d = new Date(value);
+  return `${d.getMonth() + 1}.${pad(d.getDate())}`;
 }
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -23,14 +56,13 @@ export function dotDate(value) {
 
 export const weekday = (value) => WEEKDAYS[new Date(value).getDay()];
 
-// 今天 / 昨天，其他日子返回空字符串
-export function relativeDay(value) {
+// 今天 / 昨天（withTomorrow 时还有明天），其他日子返回空字符串
+export function relativeDay(value, { withTomorrow = false } = {}) {
   const today = startOfToday();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
   const key = dayKey(value);
   if (key === dayKey(today)) return '今天';
-  if (key === dayKey(yesterday)) return '昨天';
+  if (key === dayKey(addDays(today, -1))) return '昨天';
+  if (withTomorrow && key === dayKey(addDays(today, 1))) return '明天';
   return '';
 }
 

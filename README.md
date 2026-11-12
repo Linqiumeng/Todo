@@ -4,7 +4,8 @@
 
 - 样式是一本线圈便签本：米白纸（默认）/ 暗色可切换，待办按分类分段，勾选时画一个蓝色圆珠笔的钩
 - 主页：所有未完成的待办 + 今天完成的；每个分类里没做完的在上面，打钩后钩画完会滑到最下面（按完成顺序）；昨天及以前完成的只在「记录」页出现，按天分组
-- 修改：点待办右边的笔形图标，可以改标题、换分类；回车或点别处保存，Esc 放弃
+- 修改：点待办右边的笔形图标，可以改标题、换分类、安排时间；回车或点别处保存，Esc 放弃
+- 时间表：宽屏时右边竖着一条（7:00–24:00，一行 = 30 分钟），手机上点顶部的「时间」。在编辑行选「哪天 / 开始时间 / 时长」安排，编辑时时间表上有虚线框预览；色块用分类颜色，时间重叠的并排，点色块等于打钩；‹ › 看别的日子。清单里排了时间的显示开始时间，过了时间没做完的变红；以前排了但没做完的当作没安排
 - 分类：在主页点「管理分类」新建、改名、换颜色、删除；删除分类后，里面的待办移到「未分类」
 - 没有账号系统，打开网站要输入一次口令（环境变量 `PASSCODE`），浏览器会记住
 
@@ -42,7 +43,9 @@ PATCH  /api/categories/:id                { name?, color? }
 DELETE /api/categories/:id                里面的待办移到未分类
 GET    /api/todos?since=<ISO>             未完成的 + since 之后完成的
 GET    /api/todos/history?before=&category=   已完成，按完成时间倒序，每页 50 条；category 可为 none
+GET    /api/todos/schedule?from=&to=      开始时间在 [from, to) 里的（时间表用，做没做完都返回）
 POST   /api/todos                         { title, category? }
-PATCH  /api/todos/:id                     { title?, category?, done? }
+PATCH  /api/todos/:id                     { title?, category?, done?, scheduledStart?, scheduledEnd? }
+                                          scheduledStart 为 null 表示取消安排
 DELETE /api/todos/:id
 ```

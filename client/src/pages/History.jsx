@@ -3,6 +3,7 @@ import CategoryTabs, { ALL, buildTabs } from '../components/CategoryTabs.jsx';
 import Sheet, { DateLine } from '../components/Sheet.jsx';
 import { api } from '../lib/api.js';
 import { useCategories } from '../lib/CategoriesContext.jsx';
+import { useTodos } from '../lib/TodosContext.jsx';
 import { dayKey, relativeDay, timeLabel } from '../lib/dates.js';
 import { toast, toastError } from '../lib/toast.js';
 
@@ -19,6 +20,8 @@ function groupByDay(items) {
 
 export default function History() {
   const { categories, categoryOf } = useCategories();
+  // 放回待办后，清单和时间表要重新拉一次
+  const { reload: reloadTodos } = useTodos();
   const [filter, setFilter] = useState(ALL);
   const [items, setItems] = useState(null);
   const [hasMore, setHasMore] = useState(false);
@@ -66,6 +69,7 @@ export default function History() {
     try {
       await api.updateTodo(todo._id, { done: false });
       drop(todo._id);
+      reloadTodos();
       toast(`「${todo.title}」已放回待办`);
     } catch (err) {
       toastError(err);

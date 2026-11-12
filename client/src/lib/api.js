@@ -44,6 +44,8 @@ export const api = {
     if (category) query.set('category', category);
     return request(`/todos/history?${query}`);
   },
+  listSchedule: (from, to) =>
+    request(`/todos/schedule?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`),
   createTodo: (data) => request('/todos', { method: 'POST', body: data }),
   updateTodo: (id, data) => request(`/todos/${id}`, { method: 'PATCH', body: data }),
   deleteTodo: (id) => request(`/todos/${id}`, { method: 'DELETE' }),
